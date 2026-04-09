@@ -1,4 +1,4 @@
-# iDRAC Temperature Monitor
+# iDRAC Temperature Monitor (PHP)
 
 A lightweight, PHP-based monitoring solution for Dell iDRAC systems. This tool utilizes the Redfish API to fetch real-time temperature data, provides historical logging, and features an automated email alert system for thermal management.
 
