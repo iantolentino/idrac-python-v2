@@ -1,41 +1,107 @@
-## iDRAC Temperature Monitor
-This utility provides real-time tracking of Dell iDRAC System Inlet temperatures to ensure server room stability. This tool is utilized at **Nanox Philippines Inc.** to manage server health monitoring and inventory logistics. It combines a Python-based hardware monitor with a PHP-based inventory reporting engine.
+# iDRAC Temperature Monitor
 
-### Features
-* **Automated Discovery:** Crawls Redfish API endpoints to locate temperature sensors across hardware generations.
-* **Intelligent Alerting:** Employs a state machine to transition between Normal, Warning, and Critical statuses.
-* **Persistence:** Maintains `idrac_state.json` to track alert history and prevent duplicate notifications.
-* **Visual Reporting:** Generates 10-minute trend charts attached directly to email alerts.
-
-### Developer Setup
-1. **Requirements:** Python 3.8+, `requests`, `flask`, and `matplotlib`.
-2. **Configuration:** Define iDRAC credentials and SMTP relay settings in the environment configuration.
-3. **Execution:** Use `run_hourly.bat` to schedule automated polling via Windows Task Scheduler.
-4. **Dashboard:** Access `idrac.php` for a web-based view of current server health and historical logs.
+A lightweight, PHP-based monitoring solution for Dell iDRAC systems. This tool utilizes the Redfish API to fetch real-time temperature data, provides historical logging, and features an automated email alert system for thermal management.
 
 ---
 
-## EMRIS Inventory Management
-A robust financial and logistics tool used for auditing stock positions and generating movement reports.
+## Features
 
-### Inventory Logic
-The system reconciles stock using the following formula:
-$$Ending\ Stock = (Beginning\ Stock + Received + Other\ In + WIP\ In + Returns) - (Issued + Other\ Out)$$
-* **Beginning Stock:** Pulled from the latest non-zero `beg_stock` entry prior to the report period.
-* **Ending Cost:** Calculated as $Ending\ Stock \times Unit\ Price$ using the most recent price list entry.
-
-### Components
-* **`generate_report.php`**: User interface for selecting year/month and generating CSV exports.
-* **`inventory_download_csv.php`**: Backend engine that processes SQL queries and generates standardized CSV files.
-* **`inventory_view.php`**: Administrator validation tool with FA Code filtering and stock source tracing.
-* **`config.php`**: Database connection handler optimized for performance with a 30-second read timeout.
+* **Real-time Monitoring:** Fetches temperature data via iDRAC Redfish API.
+* **Automated Alerts:** Sends email notifications for status changes (Normal, Warning, Critical).
+* **Persistence Tracking:** Detects and alerts if a warning or critical state persists for more than 5 minutes.
+* **Logging System:** * **CSV Logs:** High-level status and temperature history.
+    * **Storage Logs:** Detailed technical logs including timestamps and IP addresses.
+* **Responsive Dashboard:** A dark-mode, mobile-first web interface with live graph updates.
+* **Reporting:** Automated hourly status reports and manual report generation.
 
 ---
 
-## Deployment Notes
-* **Timezone:** All systems are hardcoded to `Asia/Manila` for local business accuracy.
-* **Database:** Connects to the `imfsdb` schema via port `3308`.
-* **Security:** Ensure `idrac_config.php` and `config.php` are properly secured as they contain infrastructure credentials.
+## Technical Architecture
+
+
+
+The system operates by sending authenticated CURL requests to the iDRAC endpoint. It processes the JSON response, applies a temperature offset (configured for specific sensor accuracy), and stores the state in a local JSON file to prevent redundant alert firing.
+
+---
+
+## Installation and Setup
+
+### Prerequisites
+
+* PHP 7.4 or higher
+* PHP CURL extension enabled
+* A Dell server with iDRAC (Enterprise or Express) and Redfish API enabled
+* Access to an SMTP server or local mail relay
+
+### Configuration
+
+1.  Create a file named `idrac_config.php` in the root directory.
+2.  Define the following configuration parameters:
+
+```php
+$CONFIG = [
+    'idrac_url'      => 'https://your-idrac-ip',
+    'idrac_user'     => 'admin',
+    'idrac_pass'     => 'password',
+    'warning_temp'   => 35.0,
+    'critical_temp'  => 45.0,
+    'timezone'       => 'Asia/Manila',
+    'email_to'       => 'admin@example.com',
+    'email_from'     => 'monitor@example.com',
+    'email_from_name'=> 'iDRAC Monitor',
+    'transport'      => 'smtp',
+    'smtp_host'      => 'your.smtp.relay',
+    'smtp_port'      => 25
+];
+```
+
+---
+
+## Developer Usage
+
+### API Endpoints
+
+The system provides several JSON endpoints via the `action` GET parameter:
+
+* `?action=get_temp`: Triggers a new poll and returns current sensor data.
+* `?action=get_graph_data`: Returns filtered historical data for Chart.js integration.
+* `?action=test_email`: Validates SMTP configuration.
+* `?action=download_logs&type=csv`: Exports the main temperature log.
+
+### CLI and Automation
+
+For continuous monitoring and hourly reports, set up a cron job on your server:
+
+**Hourly Report:**
+```bash
+0 * * * * /usr/bin/php /path/to/idrac_monitor.php --hourly
+```
+
+**High-Frequency Polling (Every 5 minutes):**
+```bash
+*/5 * * * * /usr/bin/php /path/to/idrac_monitor.php --get_temp
+```
+
+---
+
+## Directory Structure
+
+* `idrac_monitor.php`: Main application logic and UI.
+* `idrac_config.php`: User-defined settings (not included).
+* `idrac_state.json`: Internal state tracker for alerts.
+* `idrac_log.csv`: General temperature history.
+* `/storage/temperature.log`: Detailed raw logs.
+* `/assets/`: UI dependencies (e.g., Chart.js).
+
+---
+
+## User Interface Guide
+
+* **Temperature Panel:** Displays the current Celsius reading and a color-coded status badge.
+* **Analytics Graph:** Visualizes temperature trends over time.
+* **Manual Controls:** * **Refresh:** Force an immediate sensor update.
+    * **Send Report:** Manually trigger a status email to the configured administrator.
+    * **Logs:** Access the log viewer to filter data by date range.
 
 ## Actual Screenshots
 <img width="1338" height="478" alt="live-graph" src="https://github.com/user-attachments/assets/45c9a73d-0f84-448c-a15a-31bdd357ea3f" />
