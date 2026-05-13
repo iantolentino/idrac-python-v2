@@ -13,7 +13,7 @@ A lightweight, PHP-based monitoring solution for Dell iDRAC systems. This tool u
     * **Storage Logs:** Detailed technical logs including timestamps and IP addresses.
 * **Responsive Dashboard:** A dark-mode, mobile-first web interface with live graph updates.
 * **Reporting:** Automated hourly status reports and manual report generation.
-
+ 
 ---
 
 ## Technical Architecture
